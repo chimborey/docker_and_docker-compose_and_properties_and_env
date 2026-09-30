@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  # --- ១. កំណត់រចនាសម្ព័ន្ធសម្រាប់ Database PostgreSQL ---
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: postgres_container
+    ports:
+      - "5432:5432"
+    environment:
+      # ⚠️ ចំណុចសំខាន់៖ ជំនួសតម្លៃពិត ដោយហៅឈ្មោះ Variable ពី .env មកប្រើវិញ
+      POSTGRES_DB: Chat_Application_Demo        # ទុកឈ្មោះ DB នេះដដែលព្រោះក្នុង .env ជា SPRING_URL ពេញលេញ
+      POSTGRES_USER: ${SPRING_USERNAME}         # ទាញយកតម្លៃ "postgres" ពី .env
+      POSTGRES_PASSWORD: ${SPRING_PASSWORD}     # ជំនួសដោយតម្លៃ "borey23456789chim" ពី .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # --- ២. កំណត់រចនាសម្ព័ន្ធសម្រាប់ Spring Boot Application ---
+  spring-app:
+    build: .
+    container_name: spring_chat_app
+    ports:
+      - "8090:8090"
+    depends_on:
+      - postgres-db # ឱ្យ PostgreSQL រត់ឡើងមុន ទើប Spring Boot រត់តាមក្រោយ
+    environment:
+      # ⚠️ ចំណុចសំខាន់៖ នៅក្នុង Docker ដាច់ខាតត្រូវប្តូរពាក្យ "localhost" ទៅជាឈ្មោះ service "postgres-db" វិញ
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/Chat_Application_Demo
+      SPRING_DATASOURCE_USERNAME: ${SPRING_USERNAME}  # ទាញពី .env
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_PASSWORD}  # ទាញពី .env
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_DDL}     # ទាញតម្លៃ "none" ពី .env
+      SPRING_FLYWAY_ENABLED: ${SPRING_FLYWAY_ENABLED}  # ទាញតម្លៃ "true" ពី .env
+
+volumes:
+  postgres_data:
